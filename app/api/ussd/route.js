@@ -1,5 +1,6 @@
-//app/api/ussd/route.js
+// app/api/ussd/route.js
 import { supabase } from "@/lib/supabaseClient";
+import { sendSMS } from "../../../utils/sendSms"; // Import sendSMS function
 
 export async function POST(req) {
   try {
@@ -89,6 +90,18 @@ export async function POST(req) {
         console.error("Error saving to Supabase:", error);
         response = `END There was an error submitting your report. Please try again later.`;
       } else {
+        // Send SMS to site safety team
+        try {
+          await sendSMS({
+            to: "+254714987968", // Replace with safety team's number
+            message: `New Incident Reported!\nID: ${incidentId}\nType: ${type}\nDescription: ${description}\nLocation: ${location}\nSeverity: ${severity}\nReported by: ${phoneNumber}`,
+            from: "AFTKNG", // Your registered sender ID
+          });
+        } catch (smsError) {
+          console.error("Error sending SMS:", smsError);
+          // Note: We don't fail the USSD response if SMS fails, just log the error
+        }
+
         response = `END Thank you for reporting!
 Incident ID: ${incidentId}
 Type: ${type}
